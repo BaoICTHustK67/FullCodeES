@@ -1,0 +1,15 @@
+../Core/Src/Snake.c:31:12:SpawnFood	32	static
+../Core/Src/Snake.c:59:6:BorderRender	32	static
+../Core/Src/Snake.c:94:6:BoxRender	40	static
+../Core/Src/Snake.c:131:6:Snake_Init	32	static
+../Core/Src/Snake.c:158:5:CanMoveUpDown	4	static
+../Core/Src/Snake.c:164:5:CanMoveLeftRight	4	static
+../Core/Src/Snake.c:170:5:isFoodPosition	16	static
+../Core/Src/Snake.c:177:5:isSnakeOrWall	24	static
+../Core/Src/Snake.c:192:6:PrintScore	112	static
+../Core/Src/Snake.c:260:6:PrintDebugInfo	4	static
+../Core/Src/Snake.c:266:6:PrintPaused	16	static
+../Core/Src/Snake.c:283:6:PrintGameOver	16	static
+../Core/Src/Snake.c:299:6:MoveSnake	56	static
+../Core/Src/Snake.c:430:6:Snake_InputHandler	8	static
+../Core/Src/Snake.c:438:6:Snake_main	16	static

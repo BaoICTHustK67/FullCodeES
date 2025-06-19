@@ -1,0 +1,12 @@
+../Core/Src/TETRIS.c:57:6:ArrayReset	24	static
+../Core/Src/TETRIS.c:71:6:PrintArray	24	static
+../Core/Src/TETRIS.c:91:6:ArrayDebug	4	static
+../Core/Src/TETRIS.c:99:6:DeleteRow	24	static
+../Core/Src/TETRIS.c:104:6:MoveAllRowAbove	24	static
+../Core/Src/TETRIS.c:115:5:CheckFullRow	24	static
+../Core/Src/TETRIS.c:143:6:PrintVariables	4	static
+../Core/Src/TETRIS.c:147:6:Refresh	8	static
+../Core/Src/TETRIS.c:164:6:InputProcess	8	static
+../Core/Src/TETRIS.c:225:6:TETRIS_main	16	static
+../Core/Src/TETRIS.c:318:6:khung	24	static
+../Core/Src/TETRIS.c:339:6:TETRIS_PrintScore	112	static
