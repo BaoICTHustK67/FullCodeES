@@ -161,14 +161,10 @@ void Refresh()
     // Print level
 }
 
-void InputProcess() // Function processing user's input
-{
-//    if (isUSERKey() == 1) {
-//    	while (isUSERKey() == 1);
-//    	TETRIS_Snake = 1;
-//    }
+// Function processing user's input
+void InputProcess() {
 	if (isLeftKey() == 1 && !Pause) // Moves current tetromino to the left if the 'a' key is pressed
-    {
+	{
         while (isLeftKey() == 1) {
         	if (isKeyHold >= KEY_HOLD_TIME) break;
         	else isKeyHold++;

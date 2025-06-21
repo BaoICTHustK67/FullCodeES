@@ -801,14 +801,10 @@ void Refresh()
 
 080007cc <InputProcess>:
 
-void InputProcess() // Function processing user's input
-{
+// Function processing user's input
+void InputProcess() {
  80007cc:	b580      	push	{r7, lr}
  80007ce:	af00      	add	r7, sp, #0
-//    if (isUSERKey() == 1) {
-//    	while (isUSERKey() == 1);
-//    	TETRIS_Snake = 1;
-//    }
 	if (isLeftKey() == 1 && !Pause) // Moves current tetromino to the left if the 'a' key is pressed
  80007d0:	f005 f98a 	bl	8005ae8 <isLeftKey>
  80007d4:	4603      	mov	r3, r0
@@ -820,7 +816,7 @@ void InputProcess() // Function processing user's input
  80007e2:	b2db      	uxtb	r3, r3
  80007e4:	2b00      	cmp	r3, #0
  80007e6:	d024      	beq.n	8000832 <InputProcess+0x66>
-    {
+	{
         while (isLeftKey() == 1) {
  80007e8:	e009      	b.n	80007fe <InputProcess+0x32>
         	if (isKeyHold >= KEY_HOLD_TIME) break;

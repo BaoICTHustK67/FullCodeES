@@ -6,7 +6,7 @@
 ../Core/Src/TETRIS.c:115:5:CheckFullRow	24	static
 ../Core/Src/TETRIS.c:143:6:PrintVariables	4	static
 ../Core/Src/TETRIS.c:147:6:Refresh	8	static
-../Core/Src/TETRIS.c:164:6:InputProcess	8	static
-../Core/Src/TETRIS.c:225:6:TETRIS_main	16	static
-../Core/Src/TETRIS.c:318:6:khung	24	static
-../Core/Src/TETRIS.c:339:6:TETRIS_PrintScore	112	static
+../Core/Src/TETRIS.c:165:6:InputProcess	8	static
+../Core/Src/TETRIS.c:221:6:TETRIS_main	16	static
+../Core/Src/TETRIS.c:314:6:khung	24	static
+../Core/Src/TETRIS.c:335:6:TETRIS_PrintScore	112	static

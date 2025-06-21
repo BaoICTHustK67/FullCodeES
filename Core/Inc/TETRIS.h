@@ -48,7 +48,6 @@ extern bool	NewTetromino,
             GamePlay, // Checks whether the programme is in gameplay state or not
             disable; //để tạm dừng màn hình bên trái
 
-
 // Functions define
 void ArrayReset();
 void PrintArray(int x, int y);
