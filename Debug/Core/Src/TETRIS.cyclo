@@ -7,6 +7,6 @@
 ../Core/Src/TETRIS.c:143:6:PrintVariables	1
 ../Core/Src/TETRIS.c:147:6:Refresh	1
 ../Core/Src/TETRIS.c:164:6:InputProcess	39
-../Core/Src/TETRIS.c:225:6:TETRIS_main	13
+../Core/Src/TETRIS.c:225:6:TETRIS_main	12
 ../Core/Src/TETRIS.c:318:6:khung	7
 ../Core/Src/TETRIS.c:339:6:TETRIS_PrintScore	14

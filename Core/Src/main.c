@@ -32,7 +32,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SAMPLE_RATE         8000U      // Desired sample rate (Hz)
+#define DAC_MAX_VALUE       4095U
+#define MAX_WAVE_BUF_SIZE   1024U
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -42,21 +44,38 @@
 
 /* Private variables ---------------------------------------------------------*/
 DMA2D_HandleTypeDef hdma2d;
-
 I2C_HandleTypeDef hi2c1;
-
 LTDC_HandleTypeDef hltdc;
-
 RNG_HandleTypeDef hrng;
-
 SPI_HandleTypeDef hspi1;
-
 SDRAM_HandleTypeDef hsdram1;
+DAC_HandleTypeDef hdac1;
+TIM_HandleTypeDef htim6;
+DMA_HandleTypeDef hdma_dac1;
+
+
 
 /* USER CODE BEGIN PV */
 int isKeyHold = 0;
 uint32_t randomNum;
 uint32_t seed = 123;
+uint16_t wave_buf[MAX_WAVE_BUF_SIZE];
+
+typedef struct {
+    float freq;       // Hz; 0 => rest
+    uint32_t dur_ms;  // duration in milliseconds
+} Note;
+
+// Example melody: "Mary Had a Little Lamb" (partial)
+Note melody[] = {
+    {659.25511f, 200}, {493.8833f, 200}, {523.25113f, 200}, {587.32954f, 200}, {523.25113f, 200}, {493.8833f, 200}, {440.0f, 200}, {440.0f, 200},
+    {523.25113f, 200}, {659.25511f, 200}, {587.32954f, 200}, {523.25113f, 200}, {493.8833f, 200}, {523.25113f, 200}, {587.32954f, 200},
+    {659.25511f, 200}, {523.25113f, 200}, {440.0f, 200}, {440.0f, 200}, {440.0f, 200}, {493.8833f, 200}, {523.25113f, 200}, {587.32954f, 200},
+    {698.45646f, 200}, {880.0f, 200}, {783.99087f, 200}, {698.45646f, 200}, {659.25511f, 200}, {523.25113f, 200}, {659.25511f, 200},
+    {587.32954f, 200}, {523.25113f, 200}, {493.8833f, 200}, {493.8833f, 200}, {523.25113f, 200}, {587.32954f, 200}, {659.25511f, 200},
+    {523.25113f, 200}, {440.0f, 200}, {440.0f, 200}
+};
+const size_t MELODY_LENGTH = sizeof(melody)/sizeof(melody[0]);
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -68,13 +87,53 @@ static void MX_SPI1_Init(void);
 static void MX_DMA2D_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_RNG_Init(void);
+static void MX_DAC_Init(void);
+static void MX_DMA_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// Play one note: freq in Hz, duration in ms
+void generate_square(uint16_t *buf, uint32_t N) {
+    const uint16_t mid = DAC_MAX_VALUE / 2;
+    const int32_t peak = (DAC_MAX_VALUE / 2) - 100;
+    int32_t high = mid + peak;
+    int32_t low  = mid - peak;
+    if (high > (int32_t)DAC_MAX_VALUE) high = DAC_MAX_VALUE;
+    if (low < 0) low = 0;
+    for (uint32_t i = 0; i < N; i++) {
+        buf[i] = (i < (N/2)) ? (uint16_t)high : (uint16_t)low;
+    }
+}
 
+void play_note(float freq, uint32_t dur_ms) {
+    if (freq <= 0.0f) {
+        // rest: output mid-level or silence
+        HAL_DAC_Stop_DMA(&hdac1, DAC_CHANNEL_1);
+        HAL_Delay(dur_ms);
+        return;
+    }
+    // Compute buffer length N ~ SAMPLE_RATE / freq
+    uint32_t N = (uint32_t)( (float)SAMPLE_RATE / freq );
+    if (N < 2) N = 2;
+    if (N > MAX_WAVE_BUF_SIZE) {
+        N = MAX_WAVE_BUF_SIZE;
+    }
+    // Fill wave_buf with waveform; choose square or sine
+    generate_square(wave_buf, N);
+    // Or: generate_sine(wave_buf, N);
+
+    // Start DAC DMA circular
+    HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_1, (uint32_t*)wave_buf, N, DAC_ALIGN_12B_R);
+    // Wait duration
+    HAL_Delay(dur_ms);
+//    // Stop DMA
+    HAL_DAC_Stop_DMA(&hdac1, DAC_CHANNEL_1);
+    // Short gap between notes
+    HAL_Delay(50);
+}
 /* USER CODE END 0 */
 
 /**
@@ -108,24 +167,31 @@ int main(void)
   MX_LTDC_Init();
   MX_FMC_Init();
   MX_SPI1_Init();
+  MX_DMA_Init();
+  MX_DAC_Init();
   MX_DMA2D_Init();
   MX_I2C1_Init();
   MX_RNG_Init();
   /* USER CODE BEGIN 2 */
   HAL_RNG_Init(&hrng);
+  MX_DAC_Init();
+  MX_TIM6_Init();
+  HAL_TIM_Base_Start_IT(&htim6);
+  for (size_t i = 0; i < MELODY_LENGTH; i++) {
+      play_note(melody[i].freq, melody[i].dur_ms);
+  }
   BSP_LCD_Init();
   BSP_LCD_MspInit();
   BSP_LCD_LayerDefaultInit(0, LCD_FRAME_BUFFER);
-
   BSP_LCD_Clear(LCD_COLOR_BLACK);
-  /* USER CODE END 2 */
 
+
+  /* USER CODE END 2 */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
 	  TETRIS_main();
   }
@@ -485,10 +551,79 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG; // Critical for DAC output
+  GPIO_InitStruct.Pull = GPIO_NOPULL; // Pull-up/down resistors are not used for analog inputs/outputs
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+  * @brief  Initialize DAC1 (PA4) channel 1.
+  */
+static void MX_DAC_Init(void)
+{
+	  DAC_ChannelConfTypeDef sConfig = {0};
+
+	  hdac1.Instance = DAC;
+	  HAL_DAC_Init(&hdac1);
+
+	  sConfig.DAC_Trigger = DAC_TRIGGER_T6_TRGO; // DAC triggered by TIM6 TRGO
+	  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE; // Enable output buffer for better driving capability
+	  HAL_DAC_ConfigChannel(&hdac1, &sConfig, DAC_CHANNEL_1);
+}
+
+
+/**
+  * @brief  Initialize TIM6 to trigger an update interrupt at AUDIO_SAMPLE_RATE.
+  *         E.g., for 8kHz: timer clock = 72MHz, prescaler =  (72e6/8e3)-1 = 8999, period = 0.
+  */
+static void MX_TIM6_Init(void)
+{
+	  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+	  htim6.Instance = TIM6;
+	  // Example: if SystemCoreClock = 16 MHz (HSI), choose Prescaler = 1 -> timer clock = 8 MHz
+	  // Period = (8 MHz / SAMPLE_RATE) - 1 = (8000000 / 8000) - 1 = 1000 - 1 = 999
+	  htim6.Init.Prescaler = 1;
+	  htim6.Init.Period = 4499;
+	  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+	  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+	  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+}
+
+static void MX_DMA_Init(void)
+{
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE(); // DAC1 typically uses DMA1
+
+  /* Configure DMA request for DAC1 */
+  hdma_dac1.Instance = DMA1_Stream5; // Common stream for DAC1, verify with CubeMX
+  hdma_dac1.Init.Channel = DMA_CHANNEL_7; // Common channel for DAC1, verify with CubeMX
+  hdma_dac1.Init.Direction = DMA_MEMORY_TO_PERIPH;
+  hdma_dac1.Init.PeriphInc = DMA_PINC_DISABLE;
+  hdma_dac1.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_dac1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD; // 12-bit DAC, so 16-bit (half-word) data
+  hdma_dac1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+  hdma_dac1.Init.Mode = DMA_CIRCULAR; // Crucial for continuous audio playback
+  hdma_dac1.Init.Priority = DMA_PRIORITY_VERY_HIGH;
+  hdma_dac1.Init.FIFOMode = DMA_FIFOMODE_DISABLE; // FIFO can be enabled for more complex scenarios
+
+  HAL_DMA_Init(&hdma_dac1);
+
+  /* Link DAC1 to DMA1 Stream5 */
+  __HAL_LINKDMA(&hdac1, DMA_Handle1, hdma_dac1); // Correct macro to link DAC to DMA handle
+}
 
 int isUpKey() {
     if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) {

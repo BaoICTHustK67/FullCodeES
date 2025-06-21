@@ -29,6 +29,8 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_dac.h"
+#include "stm32f4xx_hal_tim.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -73,6 +75,7 @@ int		isRightKey();
 int		isAnyKeyPressed();
 void	Colour(int n);
 int		isUSERKey();
+void play_note(float freq, uint32_t dur_ms);
 
 /* USER CODE END EFP */
 

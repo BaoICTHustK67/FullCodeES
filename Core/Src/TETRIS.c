@@ -237,7 +237,7 @@ void TETRIS_main() {
 		BSP_LCD_Clear(LCD_COLOR_BLACK);
 		khung();
 
-		while (TETRIS_Snake == 0) // Infinite loop (or game loop, technically)
+		while (1) // Infinite loop (or game loop, technically)
 		{
 			InputProcess();
 			// Statement checks whether a new tetromino should be generated
